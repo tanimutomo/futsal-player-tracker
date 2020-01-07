@@ -1,18 +1,13 @@
-### import ###
 from __future__ import division
 
-
-# import python scripts
 from models import *
 from utils.utils import *
 from utils.datasets import *
 
-
-# python libraries
 import os
 import sys
-import argparse # parser
-from PIL import Image # image
+import argparse
+from PIL import Image
 import torch
 from torch.utils.data import DataLoader
 from torchvision import datasets
@@ -21,64 +16,41 @@ import torch.nn as nn
 import torch.nn.functional as F
 from matplotlib.ticker import NullLocator
 
-
-
-to_tensor = transforms.ToTensor() # PIL Image to torch.Tensor
-to_pil = transforms.ToPILImage() # torch.Tensor to PIL Image
+to_tensor = transforms.ToTensor()
+to_pil = transforms.ToPILImage()
 
 def object_detection(frame):
-    # frame = frame.transpose()
-    # frame = torch.from_numpy(frame) # [h, w, c] # uint8
-    # print(frame.shape, frame.dtype, frame.min(), frame.max())
-
-    frame = Image.fromarray(frame) # PIL Image
+    frame = Image.fromarray(frame)
     frame = frame.resize((416, 416))
-    frame = to_tensor(frame) # torch.Tensor # float32
-
-    # Pad to square resolution
-    # frame, _ = pad_to_square(frame, 0)
-    # Resize
-    # frame = resize(frame, 416)
-    # print(frame.shape)
+    frame = to_tensor(frame)
     frame = frame.unsqueeze(0)
-    # print(frame.shape)
-    # gpu or cpu
+
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    # Set up model <--- YOLO
     model = Darknet("config/yolov3.cfg", img_size=416).to(device)
 
-    # load trained parameters to model
     if "weights/yolov3.weights".endswith(".weights"):
-        # Load darknet weights
         model.load_darknet_weights("weights/yolov3.weights")
     else:
-        # Load checkpoint weights
         model.load_state_dict(torch.load("weights/yolov3.weights"))
 
-    model.eval()  # Set in evaluation mode
+    model.eval()
 
-    # Convert np.ndarray -> torch.Tensor
-    #frame = ...(frame)
-
-    # Get detections
     with torch.no_grad():
-        detections = model(frame) # detect
-        detections = non_max_suppression(detections, 0.8, 0.4) # post-process
+        detections = model(frame)
+        detections = non_max_suppression(detections, 0.8, 0.4)
     return detections
 
 
 
 def draw_bbox(img, detections):
-    classes = load_classes("data/coco.names")  # Extracts class labels from file
+    classes = load_classes("data/coco.names")
 
     cmap = plt.get_cmap("tab20b")
     colors = [cmap(i) for i in np.linspace(0, 1, 20)]
 
     print("\nSaving images:")
-    # Iterate through images and save plot of detections
     bbox_coordinate = []
-    # print(detections)
 
     for img_i, (path, detections) in enumerate(zip(img, detections)):
 
