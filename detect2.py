@@ -19,28 +19,29 @@ from matplotlib.ticker import NullLocator
 to_tensor = transforms.ToTensor()
 to_pil = transforms.ToPILImage()
 
-def object_detection(frame):
-    frame = Image.fromarray(frame)
-    frame = frame.resize((416, 416))
-    frame = to_tensor(frame)
-    frame = frame.unsqueeze(0)
 
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+class YOLO(object):
+    def __init__(self):
+        device = torch.device(
+            "cuda" if torch.cuda.is_available() else "cpu"
+        )
+        self.model = Darknet("config/yolov3.cfg", img_size=416).to(device)
+        if "weights/yolov3.weights".endswith(".weights"):
+            self.model.load_darknet_weights("weights/yolov3.weights")
+        else:
+            self.model.load_state_dict(torch.load("weights/yolov3.weights"))
+        self.model.eval()
 
-    model = Darknet("config/yolov3.cfg", img_size=416).to(device)
+    def detect(frame):
+        frame = Image.fromarray(frame)
+        frame = frame.resize((416, 416))
+        frame = to_tensor(frame)
+        frame = frame.unsqueeze(0)
 
-    if "weights/yolov3.weights".endswith(".weights"):
-        model.load_darknet_weights("weights/yolov3.weights")
-    else:
-        model.load_state_dict(torch.load("weights/yolov3.weights"))
-
-    model.eval()
-
-    with torch.no_grad():
-        detections = model(frame)
-        detections = non_max_suppression(detections, 0.8, 0.4)
-    return detections
-
+        with torch.no_grad():
+            detections = model(frame)
+            detections = non_max_suppression(detections, 0.8, 0.4)
+        return detections
 
 
 def draw_bbox(img, detections):

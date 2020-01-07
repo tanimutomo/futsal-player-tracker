@@ -3,7 +3,7 @@ from imutils.video import FPS
 from utils.utils import *
 from utils.datasets import *
 
-from detect2 import object_detection, draw_bbox
+from detect2 import YOLO, draw_bbox
 import numpy as np
 import argparse
 import imutils
@@ -43,6 +43,8 @@ else:
     vs = cv2.VideoCapture(args["video"])
 
 fps = None
+
+yolo = YOLO()
 
 count = 0
 while True:
@@ -84,7 +86,7 @@ while True:
     if count % 10 == 0:
         print("detection実行")
 
-        detections = object_detection(frame)
+        detections = yolo.detect(frame)
         print(detections)
         print("↑detectionsだぞ")
 
