@@ -14,7 +14,7 @@ from detect2 import YOLO, draw_bbox
 config_path='config/yolov3.cfg'
 weights_path='weights/yolov3.weights'
 class_path='data/coco.names'
-img_size=416
+img_size=416 
 conf_thres=0.8
 nms_thres=0.4
 # Load model and weights
@@ -106,7 +106,7 @@ ret, frame = vid.read()
 img = frame
 wname = "MouseEvent"
 cv2.namedWindow(wname)
-npoints = 4
+npoints = 5
 ptlist = PointList(npoints)
 cv2.setMouseCallback(wname, onMouse, [wname, img, ptlist])
 cv2.waitKey()
@@ -130,18 +130,21 @@ while(True):
         # frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         pilimg = Image.fromarray(frame)
         detections = detect_image(pilimg)
-        x = 0
-        x_list = []
+        out_box_indices = []
         detections = np.array(detections)
-        for corrdinates in detections:
+        print('ptlist.ptlist:', ptlist.ptlist)
+        for i, corrdinates in enumerate(detections):
             # corrdinates = corrdinates.tolist()
             pt = (int(corrdinates[2]), int(corrdinates[3]))
-            if cv2.pointPolygonTest(ptlist.ptlist, pt, False) >= 0:
-                x_list.append(x)
-            x += 1
+            print('pt: ', pt)
+            result =  cv2.pointPolygonTest(ptlist.ptlist, pt, False)
+            print('result:', result)
+            if result >= 0:
+                out_box_indices.append(i)
         print("-----")
+        sys.exit(0)
 
-        for i in x_list:
+        for i in out_box_indices:
             print(detections[i])
             detections = np.delete(detections, i, 0)
         print("-----")
